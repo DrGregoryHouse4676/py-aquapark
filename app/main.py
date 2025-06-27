@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Any
 
 
@@ -19,9 +19,10 @@ class IntegerRange:
         if not isinstance(value, int):
             raise TypeError("Value must be an integer.")
         if not (self.min_amount <= value <= self.max_amount):
-            raise ValueError(f"Value must be between"
-                             f" {self.min_amount} and {self.max_amount}."
-                             )
+            raise ValueError(
+                f"Value must be between {self.min_amount}"
+                f" and {self.max_amount}."
+            )
         setattr(instance, self.private_name, value)
 
 
@@ -53,11 +54,18 @@ class SlideLimitationValidator(ABC):
         self.weight = weight
         self.height = height
 
+    @abstractmethod
+    def validate(self) -> None:
+        pass
+
 
 class ChildrenSlideLimitationValidator(SlideLimitationValidator):
     age = IntegerRange(4, 14)
     height = IntegerRange(80, 120)
     weight = IntegerRange(20, 50)
+
+    def validate(self) -> None:
+        pass
 
 
 class AdultSlideLimitationValidator(SlideLimitationValidator):
@@ -65,23 +73,27 @@ class AdultSlideLimitationValidator(SlideLimitationValidator):
     height = IntegerRange(120, 220)
     weight = IntegerRange(50, 120)
 
+    def validate(self) -> None:
+        pass
+
 
 class Slide:
     def __init__(
             self,
             name: str,
-            limitation_class: SlideLimitationValidator
+            limitation_class: type[SlideLimitationValidator]
     ) -> None:
         self.name = name
         self.limitation_class = limitation_class
 
     def can_access(self, visitor: Visitor) -> bool:
         try:
-            self.limitation_class(
+            validator = self.limitation_class(
                 age=visitor.age,
                 weight=visitor.weight,
                 height=visitor.height
             )
+            validator.validate()
             return True
         except (ValueError, TypeError):
             return False
